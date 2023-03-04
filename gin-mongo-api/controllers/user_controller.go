@@ -6,13 +6,15 @@ import (
 	"gin-mongo-api/models"
 	"gin-mongo-api/responses"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	// "go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+
+	//"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "Info")
@@ -53,24 +55,32 @@ var validate = validator.New()
 // 	}
 // }
 
-// func GetAUser() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 			userId := c.Param("userId")
-// 			var user models.User
-// 			defer cancel()
+func GetPatient() gin.HandlerFunc {
+	return func(c *gin.Context) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			patientId, err := strconv.Atoi(c.Param("patientId"))
+			if err != nil{
+				panic(err)
+			}
 
-// 			objId, _ := primitive.ObjectIDFromHex(userId)
+			var patient models.Patient
+			defer cancel()
 
-// 			err := userCollection.FindOne(ctx, bson.M{"patient_id": objId}).Decode(&user)
-// 			if err != nil {
-// 					c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 					return
-// 			}
+			err = userCollection.FindOne(ctx, bson.M{"patient_id": patientId}).Decode(&patient)
+			if err != nil {
+					c.JSON(http.StatusInternalServerError, responses.DataResponse{
+						Status: http.StatusInternalServerError, 
+						Message: "error", 
+						Data: map[string]interface{}{"data": err.Error()}})
+					return
+			}
 
-// 			c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user}})
-// 	}
-// }
+			c.JSON(http.StatusOK, responses.DataResponse{
+				Status: http.StatusOK, 
+				Message: "success", 
+				Data: map[string]interface{}{"data": patient}})
+	}
+}
 
 // func EditAUser() gin.HandlerFunc {
 // 	return func(c *gin.Context) {
@@ -140,32 +150,38 @@ var validate = validator.New()
 // 	}
 // }
 
-func GetAllUsers() gin.HandlerFunc {
+func GetAllPatients() gin.HandlerFunc {
 	return func(c *gin.Context) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			var users []models.User
+			var patients []models.Patient
 			defer cancel()
 
 			results, err := userCollection.Find(ctx, bson.M{})
 
 			if err != nil {
-					c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+					c.JSON(http.StatusInternalServerError, responses.DataResponse{
+						Status: http.StatusInternalServerError, 
+						Message: "error", 
+						Data: map[string]interface{}{"data": err.Error()}})
 					return
 			}
 
-			//reading from the db in an optimal way
 			defer results.Close(ctx)
 			for results.Next(ctx) {
-					var singleUser models.User
-					if err = results.Decode(&singleUser); err != nil {
-							c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+					var patient models.Patient
+					if err = results.Decode(&patient); err != nil {
+							c.JSON(http.StatusInternalServerError, responses.DataResponse{
+								Status: http.StatusInternalServerError, 
+								Message: "error", 
+								Data: map[string]interface{}{"data": err.Error()}})
 					}
 
-					users = append(users, singleUser)
+					patients = append(patients, patient)
 			}
 
-			c.JSON(http.StatusOK,
-					responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": users}},
-			)
+			c.JSON(http.StatusOK,responses.DataResponse{
+				Status: http.StatusOK, 
+				Message: "success", 
+				Data: map[string]interface{}{"data": patients}})
 	}
 }

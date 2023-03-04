@@ -1,6 +1,6 @@
 package responses
 
-type UserResponse struct {
+type DataResponse struct {
 	Status  int                    `json:"status"`
 	Message string                 `json:"message"`
 	Data    map[string]interface{} `json:"data"`
