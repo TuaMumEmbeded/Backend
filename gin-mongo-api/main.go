@@ -18,5 +18,6 @@ func main() {
         configs.ConnectDB()
         // routes
         routes.UserRoute(router)
+        routes.SensorRoute(router)
         router.Run("localhost:6000") 
 }

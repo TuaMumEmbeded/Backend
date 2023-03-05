@@ -14,46 +14,90 @@ import (
 
 	//"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "Info")
+var sensorCollection *mongo.Collection = configs.GetCollection(configs.DB,"Sensor")
 var validate = validator.New()
 
-// func CreateUser() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 			var user models.User
-// 			defer cancel()
+func CreatePatient() gin.HandlerFunc {
+	return func(c *gin.Context) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			var patient models.Patient
+			defer cancel()
 
-// 			//validate the request body
-// 			if err := c.BindJSON(&user); err != nil {
-// 					c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 					return
-// 			}
+			//validate the request body
+			if err := c.BindJSON(&patient); err != nil {
+					c.JSON(http.StatusBadRequest, responses.DataResponse{
+						Status: http.StatusBadRequest, 
+						Message: "error", 
+						Data: map[string]interface{}{"data": err.Error()}})
+					return
+			}
 
-// 			//use the validator library to validate required fields
-// 			if validationErr := validate.Struct(&user); validationErr != nil {
-// 					c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": validationErr.Error()}})
-// 					return
-// 			}
+			//use the validator library to validate required fields
+			if validationErr := validate.Struct(&patient); validationErr != nil {
+					c.JSON(http.StatusBadRequest, responses.DataResponse{
+						Status: http.StatusBadRequest, 
+						Message: "error", 
+						Data: map[string]interface{}{"data": validationErr.Error()}})
+					return
+			}
 
-// 			newUser := models.User{
-// 					Id:       primitive.NewObjectID(),
-// 					Name:     user.Name,
-// 					Location: user.Location,
-// 					Title:    user.Title,
-// 			}
+			newPatient := models.Patient{
+					Id:       primitive.NewObjectID(),
+					Patient_id: patient.Patient_id,
+					Firstname:     patient.Firstname,
+					Lastname:     patient.Lastname,
+					Age:     patient.Age,
+					Gender:     patient.Gender,
+					Playtimes: []models.Playtime{},
 
-// 			result, err := userCollection.InsertOne(ctx, newUser)
-// 			if err != nil {
-// 					c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 					return
-// 			}
+			}
 
-// 			c.JSON(http.StatusCreated, responses.UserResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
-// 	}
-// }
+			newSensor := models.Sensor{
+				Id: primitive.NewObjectID(),
+				Patient_id: patient.Patient_id,
+				Emergency: false,
+				Bed: false,
+				Restroom: false,
+				Hungry: false,
+				Game: false,
+			}
+
+			count, err := userCollection.CountDocuments(ctx, bson.M{"patient_id":newPatient.Patient_id})
+			
+			if err != nil {
+				panic(err)
+			}
+
+			if count != 0{
+				c.JSON(http.StatusInternalServerError, responses.DataResponse{
+					Status: http.StatusInternalServerError, 
+					Message: "error", 
+					Data: map[string]interface{}{"data": "patient_id already exists"}})
+				return
+			}
+
+			patientID, err := userCollection.InsertOne(ctx, newPatient)
+			sensorID, err := sensorCollection.InsertOne(ctx, newSensor)
+
+			if err != nil {
+					c.JSON(http.StatusInternalServerError, responses.DataResponse{
+						Status: http.StatusInternalServerError, 
+						Message: "error", 
+						Data: map[string]interface{}{"data": err.Error()}})
+					return
+			}
+
+			c.JSON(http.StatusCreated, responses.DataResponse{
+				Status: http.StatusCreated, 
+				Message: "success", 
+				Data: map[string]interface{}{"patient_data": patientID, "sensor_data":sensorID}})
+	}
+}
 
 func GetPatient() gin.HandlerFunc {
 	return func(c *gin.Context) {
