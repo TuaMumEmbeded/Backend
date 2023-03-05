@@ -97,7 +97,3 @@ func UpdateSensor() gin.HandlerFunc {
 			Data:    map[string]interface{}{"data": updatedData}})
 	}
 }
-
-func test() {
-	return
-}
