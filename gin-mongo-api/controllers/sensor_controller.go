@@ -12,6 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+var startTime time.Time
+var endTime time.Time
 func GetSensor() gin.HandlerFunc{
 	return func (c* gin.Context){
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -44,20 +46,10 @@ func UpdateSensor() gin.HandlerFunc{
 		ctx, cancel := context.WithTimeout(context.TODO(),10*time.Second)
 		patientId,err := strconv.Atoi(c.Param("patientId"))
 		var sensor models.Sensor
-		// var old_sensor models.Sensor
-		// sensorCollection.FindOne(ctx, bson.M{"patient_id":patientId}).Decode(&old_sensor)
+		var old_sensor models.Sensor
+		sensorCollection.FindOne(ctx, bson.M{"patient_id":patientId}).Decode(&old_sensor)
 
 		defer cancel()
-
-		// if(old_sensor.Game == false && sensor.Game == true){
-		// 	var old_data models.Patient
-		// 	startTime := time.Now()
-		// 	userCollection.UpdateOne(ctx, bson.M{"patient_id":patientId},bson.M{"$set":})
-		// }
-		// if(old_data.Game == true && sensor.Game == false){
-		// 	endTime := time.Now()
-
-		// }
 
 		err = c.BindJSON(&sensor)
 		if err != nil{
@@ -66,6 +58,28 @@ func UpdateSensor() gin.HandlerFunc{
 				Message: "error", 
 				Data: map[string]interface{}{"data": err.Error()}})
 			return
+		}
+
+		var old_data models.Patient
+		
+		userCollection.FindOne(ctx, bson.M{"patient_id":patientId}).Decode(&old_data)
+
+		if(old_sensor.Game == false && sensor.Game == true){
+			startTime = time.Now()
+		}
+
+		if(old_sensor.Game == true && sensor.Game == false){
+			endTime = time.Now()
+			duration := endTime.Sub(startTime)
+			old_data.Playtimes = append(old_data.Playtimes, models.Playtime{
+				Play_No: len(old_data.Playtimes)+1,
+				StartTime: startTime,
+				EndTime : endTime,
+				Duration: duration.Seconds()})
+			//fmt.Println(endTime.Sub(startTime))
+			filter := bson.M{"playtimes":old_data.Playtimes}
+			userCollection.UpdateOne(ctx,bson.M{"patient_id":patientId},bson.M{"$set":filter})
+			
 		}
 
 		new_data := bson.M{"emergency":sensor.Emergency,"bed":sensor.Bed,"restroom":sensor.Restroom,"hungry":sensor.Hungry,"game":sensor.Game}

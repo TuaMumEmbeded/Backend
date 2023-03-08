@@ -7,8 +7,10 @@ import (
 )
 
 type Playtime struct {
-	StartTime time.Time `bson:"startTime,omitempty"`
-    EndTime time.Time `bson:"endTime,omitempty"`
+    Play_No int `bson:"playNo,omitempty"`
+	StartTime time.Time `bson:"startTime"`
+    EndTime time.Time `bson:"endTime"`
+    Duration float64 `bson:"duration"`
 }
 type Patient struct {
     Id       primitive.ObjectID `bson:"_id,omitempty"`
@@ -17,5 +19,5 @@ type Patient struct {
     Lastname     string             `bson:"lastname,omitempty" validate:"required"`
     Age     int             `bson:"age,omitempty" validate:"required"`
     Gender     string             `bson:"gender,omitempty" validate:"required"`
-    Playtimes []Playtime `bson:"playtimes,omitempty"`
+    Playtimes []Playtime `bson:"playtimes"`
 }
