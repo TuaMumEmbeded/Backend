@@ -13,15 +13,16 @@ func main() {
 
         router.Use(cors.Default())
 
-        router.GET("/", func(c *gin.Context) {
-                c.JSON(200, gin.H{
-                        "data": "Hello from Gin-gonic & mongoDB",
-                })
-        })
-        // run database
-        configs.ConnectDB()
-        // routes
-        routes.UserRoute(router)
-        routes.SensorRoute(router)
-        router.Run("localhost:6000") 
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"data": "Hello from Gin-gonic & mongoDB",
+		})
+	})
+	// run database
+	configs.ConnectDB()
+	// routes
+	routes.UserRoute(router)
+	routes.SensorRoute(router)
+	router.Run("localhost:6000")
+
 }
