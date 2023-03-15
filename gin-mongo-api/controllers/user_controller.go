@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	//"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,21 +27,19 @@ func CreatePatient() gin.HandlerFunc {
 		var patient models.Patient
 		defer cancel()
 
-		//validate the request body
 		if err := c.BindJSON(&patient); err != nil {
 			c.JSON(http.StatusBadRequest, responses.DataResponse{
 				Status:  http.StatusBadRequest,
 				Message: "error",
-				Data:    map[string]interface{}{"data": err.Error()}})
+				Data:    map[string]interface{}{"result": err.Error()}})
 			return
 		}
 
-		//use the validator library to validate required fields
 		if validationErr := validate.Struct(&patient); validationErr != nil {
 			c.JSON(http.StatusBadRequest, responses.DataResponse{
 				Status:  http.StatusBadRequest,
 				Message: "error",
-				Data:    map[string]interface{}{"data": validationErr.Error()}})
+				Data:    map[string]interface{}{"result": validationErr.Error()}})
 			return
 		}
 
@@ -53,7 +50,6 @@ func CreatePatient() gin.HandlerFunc {
 			Lastname:   patient.Lastname,
 			Age:        patient.Age,
 			Gender:     patient.Gender,
-			Playtimes:  []models.Playtime{},
 		}
 
 		newSensor := models.Sensor{
@@ -76,18 +72,22 @@ func CreatePatient() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, responses.DataResponse{
 				Status:  http.StatusInternalServerError,
 				Message: "error",
-				Data:    map[string]interface{}{"data": "patient_id already exists"}})
+				Data:    map[string]interface{}{"result": "patient_id already exists"}})
 			return
 		}
 
 		patientID, err := userCollection.InsertOne(ctx, newPatient)
+
+		if err != nil {
+			panic(err)
+		}
 		sensorID, err := sensorCollection.InsertOne(ctx, newSensor)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.DataResponse{
 				Status:  http.StatusInternalServerError,
 				Message: "error",
-				Data:    map[string]interface{}{"data": err.Error()}})
+				Data:    map[string]interface{}{"result": err.Error()}})
 			return
 		}
 
@@ -114,84 +114,16 @@ func GetPatient() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, responses.DataResponse{
 				Status:  http.StatusInternalServerError,
 				Message: "error",
-				Data:    map[string]interface{}{"data": err.Error()}})
+				Data:    map[string]interface{}{"result": err.Error()}})
 			return
 		}
 
 		c.JSON(http.StatusOK, responses.DataResponse{
 			Status:  http.StatusOK,
 			Message: "success",
-			Data:    map[string]interface{}{"data": patient}})
+			Data:    map[string]interface{}{"result": patient}})
 	}
 }
-
-// func EditAUser() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 			userId := c.Param("userId")
-// 			var user models.User
-// 			defer cancel()
-// 			objId, _ := primitive.ObjectIDFromHex(userId)
-
-// 			//validate the request body
-// 			if err := c.BindJSON(&user); err != nil {
-// 					c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 					return
-// 			}
-
-// 			//use the validator library to validate required fields
-// 			if validationErr := validate.Struct(&user); validationErr != nil {
-// 					c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": validationErr.Error()}})
-// 					return
-// 			}
-
-// 			update := bson.M{"name": user.Name, "location": user.Location, "title": user.Title}
-// 			result, err := userCollection.UpdateOne(ctx, bson.M{"id": objId}, bson.M{"$set": update})
-// 			if err != nil {
-// 					c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 					return
-// 			}
-
-// 			//get updated user details
-// 			var updatedUser models.User
-// 			if result.MatchedCount == 1 {
-// 					err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&updatedUser)
-// 					if err != nil {
-// 							c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 							return
-// 					}
-// 			}
-
-// 			c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": updatedUser}})
-// 	}
-// }
-
-// func DeleteAUser() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 			userId := c.Param("userId")
-// 			defer cancel()
-
-// 			objId, _ := primitive.ObjectIDFromHex(userId)
-
-// 			result, err := userCollection.DeleteOne(ctx, bson.M{"id": objId})
-// 			if err != nil {
-// 					c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-// 					return
-// 			}
-
-// 			if result.DeletedCount < 1 {
-// 					c.JSON(http.StatusNotFound,
-// 							responses.UserResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "User with specified ID not found!"}},
-// 					)
-// 					return
-// 			}
-
-// 			c.JSON(http.StatusOK,
-// 					responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully deleted!"}},
-// 			)
-// 	}
-// }
 
 func GetAllPatients() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -205,7 +137,7 @@ func GetAllPatients() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, responses.DataResponse{
 				Status:  http.StatusInternalServerError,
 				Message: "error",
-				Data:    map[string]interface{}{"data": err.Error()}})
+				Data:    map[string]interface{}{"result": err.Error()}})
 			return
 		}
 
@@ -216,7 +148,7 @@ func GetAllPatients() gin.HandlerFunc {
 				c.JSON(http.StatusInternalServerError, responses.DataResponse{
 					Status:  http.StatusInternalServerError,
 					Message: "error",
-					Data:    map[string]interface{}{"data": err.Error()}})
+					Data:    map[string]interface{}{"result": err.Error()}})
 			}
 
 			patients = append(patients, patient)
@@ -225,6 +157,6 @@ func GetAllPatients() gin.HandlerFunc {
 		c.JSON(http.StatusOK, responses.DataResponse{
 			Status:  http.StatusOK,
 			Message: "success",
-			Data:    map[string]interface{}{"data": patients}})
+			Data:    map[string]interface{}{"result": patients}})
 	}
 }
