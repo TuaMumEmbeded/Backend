@@ -1,16 +1,13 @@
 package routes
 
-
 import (
-    "github.com/gin-gonic/gin"
-    "gin-mongo-api/controllers"
+	"gin-mongo-api/controllers"
+
+	"github.com/gin-gonic/gin"
 )
 
-func UserRoute(router *gin.Engine)  {
-    //All routes related to users comes here
-    router.POST("/patient", controllers.CreatePatient())
-    router.GET("/patient/:patientId", controllers.GetPatient())
-    // router.PUT("/user/:userId", controllers.EditAUser())
-    // router.DELETE("/user/:userId", controllers.DeleteAUser())
-    router.GET("/patients", controllers.GetAllPatients())
+func UserRoute(router *gin.Engine) {
+	router.POST("/patient", controllers.CreatePatient())
+	router.GET("/patient/:patientId", controllers.GetPatient())
+	router.GET("/patients", controllers.GetAllPatients())
 }
