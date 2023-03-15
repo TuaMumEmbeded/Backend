@@ -1,17 +1,18 @@
 package main
 
 import (
-        "github.com/gin-contrib/cors"
-        "github.com/gin-gonic/gin"
-        "gin-mongo-api/configs"
-        "gin-mongo-api/routes"
+	"gin-mongo-api/configs"
+	"gin-mongo-api/routes"
+	"os"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-        gin.SetMode(gin.ReleaseMode)
-        router := gin.Default()
-
-        router.Use(cors.Default())
+	router := gin.Default()
+	port := os.Getenv("PORT")
+	router.Use(cors.Default())
 
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -23,6 +24,6 @@ func main() {
 	// routes
 	routes.UserRoute(router)
 	routes.SensorRoute(router)
-	router.Run("localhost:6000")
+	router.Run(":" + port)
 
 }
